@@ -6,3 +6,6 @@ js/config.js
 # Archivos generados
 graphify-out/
 node_modules/
+
+# Secretos locales de Edge Functions
+supabase/functions/**/.env
