@@ -4,6 +4,7 @@
 // ─── Modal introductorio de EcoNodo ──────────────────────────────────────────
 // Fuente de display: Syne (cargada en index.html vía Google Fonts)
 // Aparece automáticamente al cargar la página y se puede cerrar.
+// Estilos mobile-first: base = móvil, @tablet y @desktop amplían el espacio.
 
 @keyframes modalEntrada {
     from { transform: scale(0.93) translateY(14px); opacity: 0; }
@@ -19,7 +20,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem 1.6rem;
+    min-height: 100dvh;
+    padding: 0.8rem;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.22s ease;
@@ -27,6 +29,10 @@
     &.activo {
         opacity: 1;
         pointer-events: all;
+    }
+
+    @include m.tablet {
+        padding: 2rem 1.6rem;
     }
 }
 
@@ -44,12 +50,12 @@
     position: relative;
     z-index: 1;
     background: #ffffff;
-    border-radius: 2rem;
-    padding: 3rem 3rem 2.6rem;
-    max-width: 50rem;
+    border-radius: 1.4rem;
+    padding: 1.6rem;
     width: 100%;
-    max-height: 90vh;
+    max-height: calc(100dvh - 1.6rem);
     overflow-y: auto;
+    box-sizing: border-box;
     box-shadow: 0 28px 64px rgba(0, 0, 0, 0.38), 0 4px 16px rgba(0, 0, 0, 0.12);
 
     // Barra de acento degradado en la parte superior
@@ -58,7 +64,7 @@
         position: absolute;
         top: 0; left: 0; right: 0;
         height: 4px;
-        border-radius: 2rem 2rem 0 0;
+        border-radius: 1.4rem 1.4rem 0 0;
         background: linear-gradient(90deg, #2E7D32 0%, #00897B 50%, #43A047 100%);
     }
 
@@ -68,6 +74,17 @@
     }
 
     @include m.tablet {
+        border-radius: 2rem;
+        padding: 3rem 3rem 2.6rem;
+        width: min(92vw, 52rem);
+        max-height: 90vh;
+
+        &::before {
+            border-radius: 2rem 2rem 0 0;
+        }
+    }
+
+    @include m.desktop {
         padding: 3.5rem 3.5rem 3rem;
     }
 }
@@ -76,11 +93,11 @@
 
 .modal-intro__cerrar {
     position: absolute;
-    top: 1.6rem;
-    right: 1.8rem;
+    top: 1.2rem;
+    right: 1.2rem;
     background: none;
     border: none;
-    font-size: 2.6rem;
+    font-size: 2rem;
     color: #c0c0c0;
     cursor: pointer;
     line-height: 1;
@@ -91,6 +108,12 @@
     &:hover {
         color: #555;
         background: #f5f5f5;
+    }
+
+    @include m.tablet {
+        top: 1.6rem;
+        right: 1.8rem;
+        font-size: 2.6rem;
     }
 }
 
@@ -103,48 +126,73 @@
     background: $verdeFondo;
     border: 1px solid $verdeClaro;
     color: $verde;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 0.45rem 1.2rem;
+    padding: 0.35rem 1rem;
     border-radius: 10rem;
-    margin-bottom: 1.4rem;
+    margin-bottom: 0.7rem;
+
+    @include m.tablet {
+        font-size: 1.1rem;
+        letter-spacing: 0.1em;
+        padding: 0.45rem 1.2rem;
+        margin-bottom: 1.4rem;
+    }
 }
 
 // ─── Título display ─────────────────────────────────────────────────────────
+// clamp: min=3.8rem para móvil, preferido=15vw desde ~405px, max=5.5rem en desktop.
+// white-space: nowrap evita que el título se parta en dos líneas.
 
 .modal-intro__titulo {
     font-family: 'Syne', $fuente-principal;
-    font-size: 4.8rem;
+    font-size: clamp(3.8rem, 15vw, 5.2rem);
     font-weight: 800;
     color: #132B20;
-    letter-spacing: -0.03em;
-    line-height: 0.92;
-    margin: 0 0 0.7rem;
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+    margin: 0 0 0.5rem;
+    white-space: nowrap;
+    max-width: 100%;
 
     @include m.tablet {
         font-size: 5.5rem;
+        letter-spacing: -0.03em;
+        line-height: 0.92;
+        margin: 0 0 0.7rem;
     }
 }
 
 // ─── Subtítulo ──────────────────────────────────────────────────────────────
 
 .modal-intro__subtitulo {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 600;
     color: $verde;
     letter-spacing: 0.02em;
-    margin: 0 0 1.4rem;
+    margin: 0 0 0.8rem;
+
+    @include m.tablet {
+        font-size: 1.5rem;
+        margin: 0 0 1.4rem;
+    }
 }
 
 // ─── Descripción ────────────────────────────────────────────────────────────
 
 .modal-intro__descripcion {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     color: #555;
-    line-height: 1.7;
-    margin: 0 0 1.4rem;
+    line-height: 1.45;
+    margin: 0 0 0.8rem;
+
+    @include m.tablet {
+        font-size: 1.5rem;
+        line-height: 1.7;
+        margin: 0 0 1.4rem;
+    }
 }
 
 // ─── Puntos clave ───────────────────────────────────────────────────────────
@@ -152,14 +200,14 @@
 .modal-intro__puntos {
     list-style: none;
     padding: 0;
-    margin: 0 0 1.8rem;
+    margin: 0 0 1rem;
 
     li {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
         color: #555;
-        padding: 0.35rem 0 0.35rem 2.2rem;
+        padding: 0.2rem 0 0.2rem 2rem;
         position: relative;
-        line-height: 1.55;
+        line-height: 1.45;
 
         &::before {
             content: '✓';
@@ -167,83 +215,139 @@
             left: 0;
             color: $verde;
             font-weight: 700;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
+        }
+    }
+
+    @include m.tablet {
+        margin: 0 0 1.8rem;
+
+        li {
+            font-size: 1.4rem;
+            padding: 0.35rem 0 0.35rem 2.2rem;
+            line-height: 1.55;
+
+            &::before {
+                font-size: 1.3rem;
+            }
         }
     }
 }
 
 // ─── Arquitectura ───────────────────────────────────────────────────────────
+// En móvil: una sola línea con scroll horizontal suave, sin quiebre desordenado.
 
 .modal-intro__arquitectura {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 0.6rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0.5rem;
     background: $verdeFondo;
-    border-radius: 1rem;
-    padding: 1.1rem 1.4rem;
-    margin-bottom: 2.2rem;
+    border-radius: 0.8rem;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 1.2rem;
+
+    &::-webkit-scrollbar { display: none; }
+
+    @include m.tablet {
+        flex-wrap: wrap;
+        overflow-x: visible;
+        gap: 0.6rem;
+        border-radius: 1rem;
+        padding: 1.1rem 1.4rem;
+        margin-bottom: 2.2rem;
+    }
 }
 
 .modal-arq-nodo {
     background: #fff;
     border: 1px solid $grisBorde;
     color: $grisTexto;
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 600;
-    padding: 0.45rem 1.1rem;
+    padding: 0.35rem 0.9rem;
     border-radius: 0.6rem;
     white-space: nowrap;
+    flex-shrink: 0;
 
     &--cloud {
         background: $verdeFondo;
         border-color: $verdeClaro;
         color: $verde;
     }
+
+    @include m.tablet {
+        font-size: 1.25rem;
+        padding: 0.45rem 1.1rem;
+        flex-shrink: unset;
+    }
 }
 
 .modal-arq-flecha {
     color: #aaa;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     user-select: none;
+    flex-shrink: 0;
+
+    @include m.tablet {
+        font-size: 1.4rem;
+    }
 }
 
 // ─── Acciones ───────────────────────────────────────────────────────────────
+// Móvil: botones apilados verticalmente, ancho completo.
+// Desde @telefono (480px): en fila, igual que desktop.
 
 .modal-intro__acciones {
     display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1.1rem;
+    flex-direction: column;
+    gap: 0.8rem;
+
+    @include m.telefono {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.1rem;
+    }
 }
 
 .btn-modal-principal {
     background: $verde;
     color: #fff;
     border: none;
-    padding: 1.1rem 3.2rem;
+    padding: 1rem 2.4rem;
     border-radius: 10rem;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 700;
     font-family: $fuente-principal;
     cursor: pointer;
+    text-align: center;
     transition: background 0.18s ease, transform 0.18s ease;
 
     &:hover {
         background: $botonHover;
         transform: translateY(-1px);
     }
+
+    @include m.tablet {
+        padding: 1.1rem 3.2rem;
+        font-size: 1.5rem;
+    }
 }
 
 .btn-modal-secundario {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     color: $verde;
     text-decoration: none;
-    font-size: 1.45rem;
+    font-size: 1.35rem;
     font-weight: 600;
     font-family: $fuente-principal;
-    padding: 1.1rem 2rem;
+    padding: 1rem 1.6rem;
     border-radius: 10rem;
     border: 1.5px solid rgba(46, 125, 50, 0.32);
     transition: border-color 0.18s ease, background 0.18s ease;
@@ -251,6 +355,11 @@
     &:hover {
         border-color: $verde;
         background: $verdeFondo;
+    }
+
+    @include m.tablet {
+        font-size: 1.45rem;
+        padding: 1.1rem 2rem;
     }
 }
 

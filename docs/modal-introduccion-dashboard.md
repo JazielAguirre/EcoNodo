@@ -133,7 +133,49 @@ Abrir `http://localhost:4000` y verificar:
 
 ---
 
-## 9. Checklist final
+## 9. Ajuste responsive móvil
+
+**Problema corregido:** en pantallas pequeñas el título "EcoNodo" se cortaba, el contenido ocupaba demasiada altura, la arquitectura se partía de forma desordenada y los botones quedaban fuera de vista.
+
+### Qué se cambió en `_modal-intro.scss`
+
+| Elemento | Antes | Ahora (móvil) |
+|---|---|---|
+| `.modal-intro` padding | `2rem 1.6rem` (fijo) | `0.8rem` en móvil, `2rem 1.6rem` en tablet+ |
+| `.modal-intro__contenido` padding | `3rem 3rem 2.6rem` (fijo) | `1.6rem` en móvil, `3rem` en tablet+ |
+| `.modal-intro__contenido` max-height | `90vh` | `calc(100dvh - 1.6rem)` en móvil |
+| `.modal-intro__contenido` border-radius | `2rem` (fijo) | `1.4rem` en móvil, `2rem` en tablet+ |
+| Título font-size | `4.8rem` (fijo) | `clamp(3.8rem, 15vw, 5.2rem)` — escala con viewport |
+| Título letter-spacing | `-0.03em` | `-0.01em` en móvil (menos apretado) |
+| Título | sin `white-space` | `white-space: nowrap` — nunca parte la palabra |
+| Subtítulo, descripción, bullets | tamaños desktop fijos | reducidos en móvil, restaurados en tablet+ |
+| Arquitectura `flex-wrap` | `wrap` (se partía) | `nowrap` en móvil + `overflow-x: auto` |
+| Botón ✕ (cerrar) | `2.6rem` fijo | `2rem` en móvil — no roba espacio visual |
+| Botones de acción | en fila siempre | apilados en móvil, en fila desde ≥480px |
+
+### Por qué `clamp(3.8rem, 15vw, 5.2rem)` funciona
+
+- En pantallas < 405px: `15vw < 3.8rem` → usa el mínimo **3.8rem = 60.8px**
+- En pantallas ≥ 405px: `15vw` crece con el viewport hasta alcanzar el máximo de **5.2rem**
+- Con el padding reducido a 1.6rem, el contenido tiene ~298px en un teléfono de 375px, donde "EcoNodo" a 60.8px cabe sin recorte
+- `white-space: nowrap` previene partición de línea aunque la fuente renderice distinto
+
+### Arquitectura en móvil
+
+La fila `ESP32 + Sensores → Supabase → Dashboard Web` ya no se parte en múltiples líneas desordenadas. Con `flex-wrap: nowrap` + `overflow-x: auto` (scrollbar oculta), el usuario puede deslizar horizontalmente si la pantalla es muy estrecha, pero la línea queda compacta y legible en la mayoría de teléfonos.
+
+### Qué no se modificó
+
+- `index.html` — sin cambios de contenido ni HTML
+- `js/modal-intro.js` — misma lógica de abrir/cerrar
+- `js/api.js`, `js/config.js`, `js/app.js`
+- Supabase, firmware, `secrets.h`
+- Páginas `historial.html`, `alertas.html`, `configuracion.html`
+- Dashboard de sensores
+
+---
+
+## 10. Checklist final
 
 - [x] Hero section eliminada completamente de `index.html`
 - [x] Dashboard vuelve a ser el protagonista visual
