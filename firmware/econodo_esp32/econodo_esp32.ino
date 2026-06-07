@@ -60,8 +60,8 @@ const char* NODO_ID = "ECONODO_001";
 const char* SUPABASE_FUNCTION_URL =
   "https://qqpnzclvyrnwxgwfkuox.supabase.co/functions/v1/ingest-lectura";
 
-// Cada cuántos milisegundos enviar una lectura (30 segundos)
-const unsigned long INTERVALO_ENVIO_MS = 30000;
+// Cada cuántos milisegundos enviar una lectura (60 segundos)
+const unsigned long INTERVALO_ENVIO_MS = 60000;
 
 // ----------------------------------------------------------------
 // PINES
@@ -119,6 +119,9 @@ bool sdsListo = false;
 // Último código HTTP recibido (0 = sin envío aún)
 int ultimoCodigoHTTP = 0;
 
+// Estado legible del último envío — mostrado en la página LCD "Nube"
+String estadoEnvio = "";
+
 // ─── LCD: marquee continuo — todas las páginas desplazan horizontalmente ─────
 //
 // LCD_SCROLLING: avanza offset un carácter cada INTERVALO_MARQUEE_LCD_MS ms.
@@ -130,7 +133,7 @@ int ultimoCodigoHTTP = 0;
 const int LCD_SCROLLING = 0;
 const int LCD_PAUSA     = 1;
 
-const int  TOTAL_PAGINAS_LCD                    = 10;
+const int  TOTAL_PAGINAS_LCD                    = 7;
 const unsigned long INTERVALO_MARQUEE_LCD_MS    = 280;  // ms entre cada paso de marquee
 const unsigned long PAUSA_ENTRE_PAGINAS_LCD_MS  = 500;  // ms de pausa entre páginas
 
@@ -286,7 +289,9 @@ String obtenerVentanaMarquee(const String& textoExtendido, int offset) {
 }
 
 // Construye los textos de línea 1 y línea 2 para cada página.
-// Usa lenguaje simple orientado al público general.
+// 7 páginas — datos más relevantes para público general en exposición.
+// Presion, Polvo ambiental y Gases se siguen enviando a Supabase
+// pero ya no se muestran en la LCD para mantener el ciclo corto.
 void obtenerContenidoPaginaLCD(int pagina, String &l1, String &l2) {
   switch (pagina) {
     case 0:
@@ -302,32 +307,18 @@ void obtenerContenidoPaginaLCD(int pagina, String &l1, String &l2) {
       l2 = "Estado: " + String(estadoHumedad());
       break;
     case 3:
-      l1 = bmeListo ? "Presion: " + String((int)v_presion) + " hPa" : "Presion: --";
-      l2 = "Estado: " + String(estadoPresion());
-      break;
-    case 4:
       l1 = sdsListo ? "Polvo fino: " + String((int)v_pm25) : "Polvo fino: --";
       l2 = "Ref: " + String(estadoPolvoFino());
       break;
-    case 5:
-      l1 = sdsListo ? "Polvo ambiental: " + String((int)v_pm10) : "Polvo ambiental: --";
-      l2 = "Ref: " + String(estadoPolvoAmbiental());
-      break;
-    case 6: {
-      String gEst = String(estadoGasesSimple());
-      l1 = "Gases: " + gEst;
-      l2 = (gEst == "Normal") ? "Aire sin alerta" : "Revise aire";
-      break;
-    }
-    case 7:
+    case 4:
       l1 = "Calidad aire";
       l2 = (bmeListo || sdsListo) ? String(calcularEstado(calcularCalidadAire())) : "--";
       break;
-    case 8:
+    case 5:
       l1 = "Nube";
-      l2 = ultimoCodigoHTTP == 0 ? "Sin envios aun" : "HTTP: " + String(ultimoCodigoHTTP);
+      l2 = estadoEnvio.length() > 0 ? estadoEnvio : "Sin envios aun";
       break;
-    case 9:
+    case 6:
       l1 = "Conexion WiFi";
       l2 = WiFi.status() == WL_CONNECTED ? "Conectado" : "Sin conexion";
       break;
@@ -472,6 +463,7 @@ void enviarLectura() {
   payload += "\"estado\":\""       + String(estado)           + "\"";
   payload += "}";
 
+  estadoEnvio = "Enviando...";
   Serial.println("[HTTP] Enviando: " + payload);
 
   for (int intento = 1; intento <= 3; intento++) {
@@ -481,8 +473,8 @@ void enviarLectura() {
     client.setInsecure(); // Omite verificación de cert — aceptable para prototipo escolar
 
     HTTPClient http;
-    http.setTimeout(10000);       // 10 s total para la respuesta
-    http.setConnectTimeout(5000); // 5 s para el handshake TCP/TLS
+    http.setTimeout(5000);        // 5 s total — reducido para minimizar congelamiento LCD
+    http.setConnectTimeout(3000); // 3 s para el handshake TCP/TLS
     http.begin(client, SUPABASE_FUNCTION_URL);
     http.addHeader("Content-Type", "application/json");
     http.addHeader("Authorization", "Bearer " + String(NODO_SECRET_TOKEN));
@@ -490,24 +482,20 @@ void enviarLectura() {
     int httpCode = http.POST(payload);
 
     if (httpCode > 0) {
-      // Guardar código para mostrarlo en la LCD (página 8)
       ultimoCodigoHTTP = httpCode;
+      estadoEnvio = (httpCode == 200 || httpCode == 201) ? "Envio OK" : "HTTP: " + String(httpCode);
       String respuesta = http.getString();
       Serial.printf("[HTTP] Codigo: %d — %s\n", httpCode, respuesta.c_str());
       http.end();
       return;
     }
 
-    // httpCode <= 0 → error de conexión: sí se reintenta
+    // httpCode <= 0 → error de conexión: se reintenta sin delay bloqueante
     Serial.printf("[HTTP] Error de conexion: %s\n", http.errorToString(httpCode).c_str());
     http.end();
-
-    if (intento < 3) {
-      Serial.println("[HTTP] Reintentando en 2s...");
-      delay(2000);
-    }
   }
 
+  estadoEnvio = "Error nube";
   Serial.println("[HTTP] Fallaron los 3 intentos. Se omite este ciclo.");
 }
 

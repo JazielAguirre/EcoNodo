@@ -264,3 +264,85 @@ Iniciando           WiFi...      WiFi OK      ECONODO_001
 | Caracteres viejos visibles | `imprimirLCDLinea` no rellena hasta 16 | Verificar que `obtenerVentanaMarquee` devuelva 16 chars |
 | Página no avanza | `estadoMarqueeLCD` no llega a `LCD_PAUSA` | Verificar `maxOffsetMarqueeLCD` y transición en `actualizarLCD` |
 | Envío HTTP se retrasa | `delay()` accidental en el scroll | Confirmar que `actualizarLCD` usa solo `millis()` |
+
+---
+
+## 14. Ajuste final de fluidez
+
+### Problema
+
+El envío HTTP con `HTTPClient.POST()` es **bloqueante**: mientras el ESP32 espera respuesta de Supabase, el `loop()` deja de ejecutarse y la LCD se congela durante varios segundos. No se usó FreeRTOS para no añadir complejidad innecesaria en esta etapa.
+
+### Solución aplicada (sin FreeRTOS)
+
+Se combinaron tres cambios simples para reducir el congelamiento visible:
+
+#### 1 — Intervalo de envío: 30 s → 60 s
+
+```cpp
+const unsigned long INTERVALO_ENVIO_MS = 60000;
+```
+
+La LCD corre libre durante ~60 s. Con 7 páginas y ~6–7 s por página, un ciclo completo dura ~42–49 s — suficiente para completarse antes del siguiente envío.
+
+#### 2 — Páginas LCD: 10 → 7
+
+Se eliminaron del carrusel las páginas de **Presión**, **Polvo ambiental (PM10)** y **Gases (VOC)**.
+
+> Esos datos **siguen leyéndose** en los sensores y **siguen enviándose** a Supabase en cada ciclo; solo dejan de aparecer en la pantalla LCD.
+
+| Pág | Línea 1 | Línea 2 |
+|-----|---------|---------|
+| 0 | `EcoNodo` | `Monitor ambiental` |
+| 1 | `Temperatura: 33 C` | `Estado: Normal` |
+| 2 | `Humedad: 45 %` | `Estado: Normal` |
+| 3 | `Polvo fino: 12` | `Ref: Bajo` |
+| 4 | `Calidad aire` | `Bueno` |
+| 5 | `Nube` | `Envio OK` / `Enviando...` / `Error nube` |
+| 6 | `Conexion WiFi` | `Conectado` |
+
+#### 3 — Timeouts HTTP reducidos
+
+```cpp
+http.setTimeout(5000);        // antes: 10 000 ms
+http.setConnectTimeout(3000); // antes: 5 000 ms
+```
+
+**Tiempo máximo de bloqueo (peor caso, 3 reintentos fallidos):**  
+`3 × 5 s = 15 s` → antes era `3 × 10 s + 2 × 2 s = 34 s`
+
+#### 4 — Sin `delay()` entre reintentos
+
+Se eliminó el `delay(2000)` que se ejecutaba entre cada reintento HTTP fallido. El `setConnectTimeout` ya limita la espera por intento.
+
+#### 5 — Variable `estadoEnvio`
+
+Se agregó `String estadoEnvio` que actualiza el estado antes y después de cada envío:
+
+| Momento | Valor |
+|---|---|
+| Antes del POST | `"Enviando..."` |
+| HTTP 200 o 201 | `"Envio OK"` |
+| Otro código exitoso | `"HTTP: 201"` |
+| Error de red (3 intentos) | `"Error nube"` |
+
+La página 5 de la LCD muestra este valor en lugar del código numérico anterior.
+
+### Qué no se modificó
+
+- Pines LCD, BME680 y SDS011 — intactos
+- `secrets.h` — no tocado
+- Supabase Edge Function — sin cambios
+- Frontend web — sin cambios
+- Lectura de todos los sensores — sigue leyendo presión, PM10, VOC
+- Payload JSON enviado a Supabase — sigue incluyendo todos los campos
+
+### Duración estimada del ciclo LCD
+
+Con 7 páginas, texto típico de ~20 chars por línea, `textoExtendido` = 16 + 20 + 16 = 52 chars:  
+`maxOffset = 52 − 16 = 36 pasos × 280 ms + 500 ms pausa = ~10.6 s/página`
+
+En la práctica la mayoría de páginas son más cortas (8–17 chars):  
+**Estimado real: ~6–8 s por página → ciclo completo en ~42–56 s**
+
+Con `INTERVALO_ENVIO_MS = 60 000`, el ciclo cabe completo entre envíos en condiciones normales.
