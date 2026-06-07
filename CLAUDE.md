@@ -10,7 +10,7 @@ EcoNodo is a static frontend for an IoT environmental monitoring system. The int
 Sensores → ESP32 → API/Backend → Base de datos → Sitio web EcoNodo
 ```
 
-The site currently uses **simulated (fake) data** via `generarDatosFake()` in `js/app.js` and hardcoded arrays in `js/historial.js`. When a real backend is available, those data sources must be replaced with API calls. The ESP32 must never serve the website directly.
+The site reads data through `js/api.js` (`obtenerUltimaLectura()` / `obtenerHistorial()`), which queries Supabase via REST when `USE_SUPABASE === true` and falls back to **simulated (fake) data** — `generarDatosFake()` in `js/app.js` and `generarDatosFakeHistorial()` in `js/api.js` — when Supabase is disabled, the request fails, or the table returns no rows. The ESP32 must never serve the website directly.
 
 ## Commands
 

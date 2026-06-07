@@ -3,6 +3,14 @@
 **Archivo modificado:** `firmware/econodo_esp32/econodo_esp32.ino`  
 **Fecha:** 2026-06-04
 
+> ⚠️ **Documento histórico — describe una versión anterior del carrusel.**
+> En esta iteración `TOTAL_PAGINAS_LCD` valía `9`. El firmware actual define
+> `TOTAL_PAGINAS_LCD = 7` (ver `firmware/econodo_esp32/econodo_esp32.ino`,
+> línea ~136) tras una refactorización posterior que reemplazó el carrusel por
+> un sistema de marquee continuo y eliminó las páginas de Presión, PM10 y VOC.
+> Para la versión vigente, consulta [`lcd-marquee-carrusel.md`](lcd-marquee-carrusel.md).
+> Se conserva este documento como registro histórico del proceso de desarrollo.
+
 ---
 
 ## 1. Objetivo del cambio
